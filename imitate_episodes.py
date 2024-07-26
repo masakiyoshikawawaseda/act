@@ -1,12 +1,19 @@
+import os
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# torch.cuda.set_device(1)
+
 import torch
 import numpy as np
-import os
 import pickle
 import argparse
 import matplotlib.pyplot as plt
 from copy import deepcopy
 from tqdm import tqdm
 from einops import rearrange
+import sys
+import datetime
 
 from constants import DT
 from constants import PUPPET_GRIPPER_JOINT_OPEN
@@ -21,11 +28,12 @@ from sim_env import BOX_POSE
 import IPython
 e = IPython.embed
 
+
 def main(args):
     set_seed(1)
     # command line parameters
     is_eval = args['eval']
-    ckpt_dir = args['ckpt_dir']
+    ckpt_dir = os.path.join(args['ckpt_dir'], datetime.datetime.today().strftime('%Y%m%d_%H%M_%S'))
     policy_class = args['policy_class']
     onscreen_render = args['onscreen_render']
     task_name = args['task_name']
@@ -35,19 +43,25 @@ def main(args):
 
     # get task parameters
     is_sim = task_name[:4] == 'sim_'
-    if is_sim:
-        from constants import SIM_TASK_CONFIGS
-        task_config = SIM_TASK_CONFIGS[task_name]
-    else:
-        from aloha_scripts.constants import TASK_CONFIGS
-        task_config = TASK_CONFIGS[task_name]
-    dataset_dir = task_config['dataset_dir']
-    num_episodes = task_config['num_episodes']
-    episode_len = task_config['episode_len']
-    camera_names = task_config['camera_names']
+    # if is_sim:
+    #     from constants import SIM_TASK_CONFIGS
+    #     task_config = SIM_TASK_CONFIGS[task_name]
+    # else:
+    #     from aloha_scripts.constants import TASK_CONFIGS
+    #     task_config = TASK_CONFIGS[task_name]
+    # dataset_dir = task_config['dataset_dir']
+    # num_episodes = task_config['num_episodes']
+    # episode_len = task_config['episode_len']
+    # camera_names = task_config['camera_names']
+   
+    dataset_dir = '/home/yoshikawa/job/2024/airec/data_0704'
+    num_episodes = 3
+    episode_len = 400
+    camera_names = ['images']
 
     # fixed parameters
-    state_dim = 14
+    # state_dim = 14
+    state_dim = 4 # xyz, hand_state
     lr_backbone = 1e-5
     backbone = 'resnet18'
     if policy_class == 'ACT':
@@ -418,6 +432,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval', action='store_true')
     parser.add_argument('--onscreen_render', action='store_true')
     parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=True)
+    # parser.add_argument('--ckpt_dir', type=str, help='ckpt_dir', default='./log' + datetime.datetime.today().strftime('/%Y%m%d_%H%M_%S'), required=False)
     parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize', required=True)
     parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
     parser.add_argument('--batch_size', action='store', type=int, help='batch_size', required=True)
@@ -425,11 +440,20 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', action='store', type=int, help='num_epochs', required=True)
     parser.add_argument('--lr', action='store', type=float, help='lr', required=True)
 
+    
     # for ACT
     parser.add_argument('--kl_weight', action='store', type=int, help='KL Weight', required=False)
     parser.add_argument('--chunk_size', action='store', type=int, help='chunk_size', required=False)
     parser.add_argument('--hidden_dim', action='store', type=int, help='hidden_dim', required=False)
     parser.add_argument('--dim_feedforward', action='store', type=int, help='dim_feedforward', required=False)
     parser.add_argument('--temporal_agg', action='store_true')
+
+    # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     
-    main(vars(parser.parse_args()))
+    args = parser.parse_args()
+    # hoge = vars(args)
+    # import ipdb;ipdb.set_trace()
+
+    # main(vars(parser.parse_args()))
+    main(vars(args))
